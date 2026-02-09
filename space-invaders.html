@@ -1,0 +1,518 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Color Space Invaders (TypeScript-flavored)</title>
+  <style>
+    :root {
+      --bg1: #090b1e;
+      --bg2: #1a0f2e;
+      --accent: #ff3d9a;
+      --accent2: #00e5ff;
+      --accent3: #ffe66d;
+      --text: #eaf7ff;
+    }
+    html, body {
+      margin: 0;
+      height: 100%;
+      background: radial-gradient(1200px 800px at 30% 20%, #1f1a4d 0%, #0c0d1e 45%, #05060e 100%);
+      color: var(--text);
+      font-family: "Space Grotesk", "Futura", "Gill Sans", "Trebuchet MS", sans-serif;
+      overflow: hidden;
+    }
+    #wrap {
+      position: fixed;
+      inset: 0;
+      display: grid;
+      place-items: center;
+    }
+    canvas {
+      border-radius: 16px;
+      box-shadow:
+        0 0 0 2px rgba(255,255,255,0.06),
+        0 20px 80px rgba(0,0,0,0.45),
+        inset 0 0 80px rgba(255,255,255,0.04);
+      background: linear-gradient(180deg, rgba(14, 9, 30, 0.9), rgba(8, 6, 18, 0.95));
+    }
+    #hud {
+      position: absolute;
+      top: 18px;
+      left: 18px;
+      right: 18px;
+      display: flex;
+      justify-content: space-between;
+      pointer-events: none;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-shadow: 0 2px 8px rgba(0,0,0,0.5);
+    }
+    #controls {
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      pointer-events: auto;
+    }
+    #restartBtn {
+      border: 0;
+      border-radius: 999px;
+      padding: 10px 16px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      color: #0b0b14;
+      background: linear-gradient(120deg, #ffe66d, #ff7ad9);
+      box-shadow: 0 8px 24px rgba(255, 122, 217, 0.35);
+      cursor: pointer;
+      transition: transform 0.15s ease, filter 0.15s ease;
+    }
+    #restartBtn:hover {
+      transform: translateY(-1px) scale(1.02);
+      filter: brightness(1.08);
+    }
+    #restartBtn:active {
+      transform: translateY(1px) scale(0.98);
+    }
+    #hint {
+      position: absolute;
+      bottom: 18px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 13px;
+      opacity: 0.7;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+  <div id="wrap">
+    <canvas id="game"></canvas>
+    <div id="hud">
+      <div id="score">Score 0</div>
+      <div id="level">Level 1</div>
+      <div id="lives">Lives 3</div>
+    </div>
+    <div id="controls">
+      <button id="restartBtn" type="button">Restart</button>
+    </div>
+    <div id="hint">Move: ← → or A D · Shoot: Space · Pause: P · Restart: R</div>
+  </div>
+
+  <!--
+    TypeScript-flavored implementation (runs as JS with @ts-check).
+    All code is contained in this single HTML file.
+  -->
+  <script type="module">
+    // @ts-check
+
+    /** @typedef {{ x: number, y: number }} Vec */
+
+    /** @param {number} min @param {number} max */
+    const rand = (min, max) => Math.random() * (max - min) + min;
+    const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
+
+    const canvas = /** @type {HTMLCanvasElement} */ (document.getElementById("game"));
+    const scoreEl = document.getElementById("score");
+    const levelEl = document.getElementById("level");
+    const livesEl = document.getElementById("lives");
+    const restartBtn = document.getElementById("restartBtn");
+    const ctx = canvas.getContext("2d");
+
+    if (!ctx || !scoreEl || !levelEl || !livesEl || !restartBtn) {
+      throw new Error("Missing DOM elements");
+    }
+
+    const state = {
+      width: 960,
+      height: 540,
+      paused: false,
+      gameOver: false,
+      score: 0,
+      lives: 3,
+      level: 1,
+      time: 0,
+    };
+
+    /** @type {Set<string>} */
+    const keys = new Set();
+
+    window.addEventListener("keydown", (e) => {
+      if (e.code === "KeyP") state.paused = !state.paused;
+      if (e.code === "KeyR") restart();
+      keys.add(e.code);
+    });
+    window.addEventListener("keyup", (e) => keys.delete(e.code));
+    restartBtn.addEventListener("click", () => restart());
+
+    /** @type {Array<Vec>} */
+    const stars = Array.from({ length: 140 }, () => ({
+      x: rand(0, state.width),
+      y: rand(0, state.height),
+    }));
+
+    class Player {
+      /** @param {Vec} pos */
+      constructor(pos) {
+        this.pos = pos;
+        this.width = 56;
+        this.height = 24;
+        this.speed = 420;
+        this.cooldown = 0;
+      }
+      /** @param {number} dt */
+      update(dt) {
+        let dir = 0;
+        if (keys.has("ArrowLeft") || keys.has("KeyA")) dir -= 1;
+        if (keys.has("ArrowRight") || keys.has("KeyD")) dir += 1;
+        this.pos.x += dir * this.speed * dt;
+        this.pos.x = clamp(this.pos.x, 30, state.width - 30);
+        this.cooldown = Math.max(0, this.cooldown - dt);
+      }
+      draw() {
+        ctx.save();
+        ctx.translate(this.pos.x, this.pos.y);
+        ctx.fillStyle = "#00f5d4";
+        ctx.shadowColor = "#00f5d4";
+        ctx.shadowBlur = 16;
+        ctx.beginPath();
+        ctx.moveTo(-this.width * 0.5, this.height * 0.4);
+        ctx.lineTo(0, -this.height * 0.6);
+        ctx.lineTo(this.width * 0.5, this.height * 0.4);
+        ctx.lineTo(this.width * 0.3, this.height * 0.6);
+        ctx.lineTo(-this.width * 0.3, this.height * 0.6);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+      }
+      /** @returns {Vec} */
+      get gun() {
+        return { x: this.pos.x, y: this.pos.y - this.height * 0.6 };
+      }
+    }
+
+    class Bullet {
+      /** @param {Vec} pos @param {Vec} vel @param {string} color @param {boolean} fromPlayer */
+      constructor(pos, vel, color, fromPlayer) {
+        this.pos = { ...pos };
+        this.vel = vel;
+        this.radius = 4;
+        this.color = color;
+        this.fromPlayer = fromPlayer;
+        this.alive = true;
+      }
+      /** @param {number} dt */
+      update(dt) {
+        this.pos.x += this.vel.x * dt;
+        this.pos.y += this.vel.y * dt;
+        if (this.pos.y < -20 || this.pos.y > state.height + 20) this.alive = false;
+      }
+      draw() {
+        ctx.save();
+        ctx.fillStyle = this.color;
+        ctx.shadowColor = this.color;
+        ctx.shadowBlur = 12;
+        ctx.beginPath();
+        ctx.arc(this.pos.x, this.pos.y, this.radius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+    }
+
+    class Alien {
+      /** @param {Vec} pos @param {string} color @param {number} row */
+      constructor(pos, color, row) {
+        this.pos = pos;
+        this.width = 38;
+        this.height = 26;
+        this.color = color;
+        this.alive = true;
+        this.row = row;
+      }
+      draw() {
+        ctx.save();
+        ctx.translate(this.pos.x, this.pos.y);
+        ctx.fillStyle = this.color;
+        ctx.shadowColor = this.color;
+        ctx.shadowBlur = 10;
+        ctx.beginPath();
+        ctx.ellipse(0, 0, this.width * 0.5, this.height * 0.5, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = "rgba(0,0,0,0.35)";
+        ctx.beginPath();
+        ctx.arc(-8, -2, 3.5, 0, Math.PI * 2);
+        ctx.arc(8, -2, 3.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+    }
+
+    class Particle {
+      /** @param {Vec} pos @param {string} color */
+      constructor(pos, color) {
+        this.pos = { ...pos };
+        this.vel = { x: rand(-140, 140), y: rand(-160, 80) };
+        this.life = rand(0.5, 1.1);
+        this.color = color;
+      }
+      /** @param {number} dt */
+      update(dt) {
+        this.life -= dt;
+        this.pos.x += this.vel.x * dt;
+        this.pos.y += this.vel.y * dt;
+        this.vel.y += 220 * dt;
+      }
+      draw() {
+        ctx.save();
+        const alpha = clamp(this.life, 0, 1);
+        ctx.globalAlpha = alpha;
+        ctx.fillStyle = this.color;
+        ctx.shadowColor = this.color;
+        ctx.shadowBlur = 10;
+        ctx.fillRect(this.pos.x, this.pos.y, 3, 3);
+        ctx.restore();
+      }
+    }
+
+    const player = new Player({ x: state.width / 2, y: state.height - 60 });
+    /** @type {Bullet[]} */
+    let bullets = [];
+    /** @type {Alien[]} */
+    let aliens = [];
+    /** @type {Particle[]} */
+    let particles = [];
+
+    let alienDir = 1;
+    let alienSpeed = 40;
+    let alienStepDown = 18;
+    let alienShootTimer = 0;
+    let alienShootInterval = 1.1;
+
+    const levelThemes = [
+      { rows: 5, cols: 9, spacingX: 76, spacingY: 56, speed: 40, step: 18, shoot: 1.1, colors: ["#ff3d9a", "#00e5ff", "#ffe66d", "#9b5cff", "#7CFF6B"] },
+      { rows: 6, cols: 9, spacingX: 72, spacingY: 52, speed: 48, step: 18, shoot: 1.0, colors: ["#7CFF6B", "#00e5ff", "#ffd166", "#ff6b6b", "#5f6cff"] },
+      { rows: 6, cols: 10, spacingX: 68, spacingY: 50, speed: 56, step: 20, shoot: 0.95, colors: ["#ffd166", "#ff3d9a", "#00f5d4", "#b5179e", "#80ffdb"] },
+      { rows: 7, cols: 10, spacingX: 64, spacingY: 48, speed: 62, step: 20, shoot: 0.9, colors: ["#48cae4", "#ffafcc", "#ffe66d", "#7CFF6B", "#ff5d8f"] },
+      { rows: 7, cols: 11, spacingX: 60, spacingY: 46, speed: 70, step: 22, shoot: 0.86, colors: ["#ff6b6b", "#ffd166", "#06d6a0", "#118ab2", "#ef476f"] },
+      { rows: 8, cols: 11, spacingX: 58, spacingY: 44, speed: 76, step: 22, shoot: 0.82, colors: ["#9b5cff", "#4cc9f0", "#f72585", "#b5179e", "#7CFF6B"] },
+      { rows: 8, cols: 12, spacingX: 56, spacingY: 42, speed: 84, step: 24, shoot: 0.78, colors: ["#ffe66d", "#00e5ff", "#ff3d9a", "#00f5d4", "#7CFF6B"] },
+      { rows: 9, cols: 12, spacingX: 54, spacingY: 40, speed: 90, step: 24, shoot: 0.74, colors: ["#5f6cff", "#48cae4", "#ff7ad9", "#ffd166", "#06d6a0"] },
+      { rows: 9, cols: 12, spacingX: 52, spacingY: 38, speed: 96, step: 26, shoot: 0.7, colors: ["#ff9f1c", "#ff3d9a", "#00e5ff", "#ffe66d", "#9b5cff"] },
+      { rows: 10, cols: 12, spacingX: 50, spacingY: 36, speed: 102, step: 26, shoot: 0.66, colors: ["#00f5d4", "#ffd166", "#ff6b6b", "#5f6cff", "#7CFF6B"] },
+      { rows: 10, cols: 13, spacingX: 48, spacingY: 34, speed: 108, step: 28, shoot: 0.62, colors: ["#7CFF6B", "#ff3d9a", "#00e5ff", "#ffe66d", "#b5179e"] },
+      { rows: 11, cols: 13, spacingX: 46, spacingY: 32, speed: 116, step: 28, shoot: 0.58, colors: ["#ffe66d", "#4cc9f0", "#f72585", "#06d6a0", "#ff6b6b"] },
+    ];
+
+    function getLevelConfig(level) {
+      const idx = (level - 1) % levelThemes.length;
+      const loops = Math.floor((level - 1) / levelThemes.length);
+      const base = levelThemes[idx];
+      return {
+        rows: base.rows + Math.min(2, loops),
+        cols: base.cols,
+        spacingX: Math.max(44, base.spacingX - loops * 2),
+        spacingY: Math.max(30, base.spacingY - loops * 2),
+        speed: base.speed + loops * 10 + level * 1.5,
+        step: base.step + loops * 2,
+        shoot: Math.max(0.35, base.shoot - loops * 0.05),
+        colors: base.colors,
+      };
+    }
+
+    function spawnWave() {
+      aliens = [];
+      const cfg = getLevelConfig(state.level);
+      const rows = cfg.rows;
+      const cols = cfg.cols;
+      const spacingX = cfg.spacingX;
+      const spacingY = cfg.spacingY;
+      const startX = (state.width - (cols - 1) * spacingX) / 2;
+      const startY = 72;
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          aliens.push(new Alien({
+            x: startX + c * spacingX,
+            y: startY + r * spacingY,
+          }, cfg.colors[r % cfg.colors.length], r));
+        }
+      }
+      alienSpeed = cfg.speed;
+      alienDir = 1;
+      alienStepDown = cfg.step;
+      alienShootInterval = cfg.shoot;
+    }
+
+    spawnWave();
+
+    /** @param {Vec} a @param {Vec} b @param {number} ar @param {number} br */
+    function circleHit(a, b, ar, br) {
+      const dx = a.x - b.x;
+      const dy = a.y - b.y;
+      const r = ar + br;
+      return dx * dx + dy * dy <= r * r;
+    }
+
+    function restart() {
+      state.score = 0;
+      state.lives = 3;
+      state.level = 1;
+      state.time = 0;
+      state.gameOver = false;
+      state.paused = false;
+      bullets = [];
+      particles = [];
+      player.pos.x = state.width / 2;
+      spawnWave();
+    }
+
+    function update(dt) {
+      if (state.paused) return;
+      state.time += dt;
+
+      for (const star of stars) {
+        star.y += (20 + (star.x % 4) * 8) * dt;
+        if (star.y > state.height) {
+          star.y = -5;
+          star.x = rand(0, state.width);
+        }
+      }
+
+      if (!state.gameOver) player.update(dt);
+
+      if (!state.gameOver && (keys.has("Space") || keys.has("KeyK")) && player.cooldown <= 0) {
+        bullets.push(new Bullet(player.gun, { x: 0, y: -520 }, "#f6ff7a", true));
+        player.cooldown = 0.2;
+      }
+
+      const aliveAliens = aliens.filter((a) => a.alive);
+      if (!state.gameOver && aliveAliens.length === 0) {
+        state.level += 1;
+        spawnWave();
+      }
+
+      let minX = Infinity;
+      let maxX = -Infinity;
+      if (!state.gameOver) {
+        for (const alien of aliveAliens) {
+          alien.pos.x += alienDir * alienSpeed * dt;
+          minX = Math.min(minX, alien.pos.x - alien.width / 2);
+          maxX = Math.max(maxX, alien.pos.x + alien.width / 2);
+        }
+        if (minX < 30 || maxX > state.width - 30) {
+          alienDir *= -1;
+          for (const alien of aliveAliens) alien.pos.y += alienStepDown;
+        }
+
+        alienShootTimer -= dt;
+        if (aliveAliens.length && alienShootTimer <= 0) {
+          const shooter = aliveAliens[Math.floor(Math.random() * aliveAliens.length)];
+          bullets.push(new Bullet({ x: shooter.pos.x, y: shooter.pos.y + 10 }, { x: rand(-50, 50), y: 260 + state.level * 26 }, "#ff6b6b", false));
+          alienShootTimer = alienShootInterval + rand(-0.12, 0.18);
+        }
+      }
+
+      bullets.forEach((b) => b.update(dt));
+      bullets = bullets.filter((b) => b.alive);
+
+      for (const bullet of bullets) {
+        if (bullet.fromPlayer) {
+          for (const alien of aliveAliens) {
+            if (!alien.alive) continue;
+            const hit = circleHit(bullet.pos, alien.pos, bullet.radius, Math.max(alien.width, alien.height) * 0.35);
+            if (hit) {
+              alien.alive = false;
+              bullet.alive = false;
+              state.score += 100 + alien.row * 20;
+              for (let i = 0; i < 16; i++) particles.push(new Particle(alien.pos, alien.color));
+              break;
+            }
+          }
+        } else if (!state.gameOver) {
+          const hit = circleHit(bullet.pos, player.pos, bullet.radius, 22);
+          if (hit) {
+            bullet.alive = false;
+            state.lives -= 1;
+            for (let i = 0; i < 24; i++) particles.push(new Particle(player.pos, "#00f5d4"));
+            if (state.lives <= 0) {
+              state.gameOver = true;
+            }
+          }
+        }
+      }
+
+      particles.forEach((p) => p.update(dt));
+      particles = particles.filter((p) => p.life > 0);
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, state.width, state.height);
+
+      ctx.save();
+      ctx.fillStyle = "rgba(255,255,255,0.85)";
+      for (const star of stars) ctx.fillRect(star.x, star.y, 2, 2);
+      ctx.restore();
+
+      const gradient = ctx.createLinearGradient(0, 0, 0, state.height);
+      gradient.addColorStop(0, "rgba(255, 61, 154, 0.12)");
+      gradient.addColorStop(0.5, "rgba(0, 229, 255, 0.08)");
+      gradient.addColorStop(1, "rgba(255, 230, 109, 0.06)");
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, state.width, state.height);
+
+      for (const alien of aliens) if (alien.alive) alien.draw();
+      player.draw();
+      bullets.forEach((b) => b.draw());
+      particles.forEach((p) => p.draw());
+
+      if (state.gameOver) {
+        ctx.save();
+        ctx.fillStyle = "rgba(0,0,0,0.55)";
+        ctx.fillRect(0, 0, state.width, state.height);
+        ctx.fillStyle = "#ffffff";
+        ctx.font = "800 36px Space Grotesk, sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText("GAME OVER", state.width / 2, state.height / 2 - 10);
+        ctx.font = "600 16px Space Grotesk, sans-serif";
+        ctx.fillText("Press R or click Restart", state.width / 2, state.height / 2 + 26);
+        ctx.restore();
+      } else if (state.paused) {
+        ctx.save();
+        ctx.fillStyle = "rgba(0,0,0,0.5)";
+        ctx.fillRect(0, 0, state.width, state.height);
+        ctx.fillStyle = "#ffffff";
+        ctx.font = "700 32px Space Grotesk, sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText("PAUSED", state.width / 2, state.height / 2);
+        ctx.restore();
+      }
+    }
+
+    function resize() {
+      const dpr = Math.min(2, window.devicePixelRatio || 1);
+      const padding = 30;
+      const maxW = window.innerWidth - padding * 2;
+      const maxH = window.innerHeight - padding * 2;
+      const scale = Math.min(maxW / state.width, maxH / state.height);
+      canvas.style.width = `${Math.floor(state.width * scale)}px`;
+      canvas.style.height = `${Math.floor(state.height * scale)}px`;
+      canvas.width = Math.floor(state.width * dpr);
+      canvas.height = Math.floor(state.height * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+
+    let last = performance.now();
+    function frame(now) {
+      const dt = Math.min(0.033, (now - last) / 1000);
+      last = now;
+      update(dt);
+      draw();
+      scoreEl.textContent = `Score ${state.score}`;
+      levelEl.textContent = `Level ${state.level}`;
+      livesEl.textContent = `Lives ${state.lives}`;
+      requestAnimationFrame(frame);
+    }
+
+    window.addEventListener("resize", resize);
+    resize();
+    requestAnimationFrame(frame);
+  </script>
+</body>
+</html>
