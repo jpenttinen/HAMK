@@ -1,0 +1,837 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Programmer Calculator</title>
+  <style>
+    @import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap");
+
+    :root {
+      --bg-1: #0b0f1a;
+      --bg-2: #101827;
+      --panel: rgba(18, 28, 44, 0.85);
+      --panel-2: rgba(11, 19, 33, 0.8);
+      --glass: rgba(255, 255, 255, 0.06);
+      --stroke: rgba(255, 255, 255, 0.12);
+      --glow: rgba(48, 219, 205, 0.35);
+      --accent: #30dbcd;
+      --accent-2: #ffb347;
+      --muted: #9db0c8;
+      --text: #e9f0ff;
+      --danger: #ff6b6b;
+      --ok: #84f49a;
+      --shadow: 0 20px 60px rgba(2, 6, 23, 0.55);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      font-family: "Space Grotesk", system-ui, sans-serif;
+      color: var(--text);
+      background: radial-gradient(1200px 800px at 20% 10%, rgba(48, 219, 205, 0.2), transparent 60%),
+        radial-gradient(1000px 700px at 90% 20%, rgba(255, 179, 71, 0.2), transparent 60%),
+        linear-gradient(160deg, var(--bg-1), var(--bg-2));
+      padding: 32px 16px 48px;
+      overflow-x: hidden;
+    }
+
+    .orb {
+      position: absolute;
+      border-radius: 999px;
+      filter: blur(0px);
+      opacity: 0.4;
+      animation: float 10s ease-in-out infinite;
+      pointer-events: none;
+      mix-blend-mode: screen;
+    }
+
+    .orb.one {
+      width: 260px;
+      height: 260px;
+      background: radial-gradient(circle at 30% 30%, rgba(48, 219, 205, 0.7), transparent 65%);
+      top: -60px;
+      left: -40px;
+      animation-delay: -2s;
+    }
+
+    .orb.two {
+      width: 200px;
+      height: 200px;
+      background: radial-gradient(circle at 30% 30%, rgba(255, 179, 71, 0.7), transparent 65%);
+      bottom: 10%;
+      right: 5%;
+      animation-delay: -4s;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-20px); }
+    }
+
+    .app {
+      width: min(1100px, 96vw);
+      display: grid;
+      grid-template-columns: minmax(280px, 1fr) minmax(340px, 1.2fr);
+      gap: 24px;
+      position: relative;
+      z-index: 1;
+    }
+
+    @media (max-width: 960px) {
+      .app {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--stroke);
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(20px);
+    }
+
+    .display {
+      padding: 24px 24px 18px;
+      display: grid;
+      gap: 16px;
+    }
+
+    .title {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .title h1 {
+      font-size: 1.4rem;
+      margin: 0;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .status {
+      font-size: 0.8rem;
+      color: var(--muted);
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .chip {
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      font-weight: 600;
+    }
+
+    .readout {
+      background: var(--panel-2);
+      border-radius: 18px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      padding: 18px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .expr {
+      font-size: 0.95rem;
+      color: var(--muted);
+      letter-spacing: 0.04em;
+      min-height: 1.2em;
+    }
+
+    .main-value {
+      font-family: "IBM Plex Mono", ui-monospace, monospace;
+      font-size: clamp(1.8rem, 2.6vw, 2.7rem);
+      font-weight: 600;
+      word-break: break-all;
+      min-height: 2.4em;
+      text-align: right;
+    }
+
+    .base-grid {
+      display: grid;
+      gap: 10px;
+    }
+
+    .base-row {
+      display: grid;
+      grid-template-columns: 50px 1fr auto;
+      gap: 10px;
+      align-items: center;
+      background: rgba(255, 255, 255, 0.03);
+      border-radius: 12px;
+      padding: 10px 12px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      font-family: "IBM Plex Mono", ui-monospace, monospace;
+      font-size: 0.9rem;
+    }
+
+    .base-row span {
+      color: var(--muted);
+    }
+
+    .copy-btn {
+      background: transparent;
+      color: var(--muted);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 8px;
+      padding: 4px 8px;
+      font-family: "Space Grotesk", sans-serif;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .copy-btn:hover {
+      color: var(--text);
+      border-color: var(--accent);
+      box-shadow: 0 0 12px var(--glow);
+    }
+
+    .controls {
+      padding: 16px 24px 24px;
+      display: grid;
+      gap: 16px;
+    }
+
+    .switches {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 12px;
+    }
+
+    .toggle {
+      display: grid;
+      gap: 8px;
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+
+    .toggle-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .pill {
+      padding: 8px 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(255, 255, 255, 0.04);
+      cursor: pointer;
+      font-weight: 600;
+      color: var(--text);
+      transition: all 0.2s ease;
+    }
+
+    .pill.active {
+      background: linear-gradient(120deg, rgba(48, 219, 205, 0.3), rgba(255, 179, 71, 0.3));
+      border-color: rgba(48, 219, 205, 0.5);
+      box-shadow: 0 0 18px rgba(48, 219, 205, 0.35);
+    }
+
+    .pill:hover {
+      border-color: var(--accent-2);
+    }
+
+    .keypad {
+      padding: 24px;
+      display: grid;
+      gap: 12px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .btn {
+      border-radius: 16px;
+      padding: 12px 8px;
+      font-family: "Space Grotesk", sans-serif;
+      font-size: 0.95rem;
+      font-weight: 600;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text);
+      cursor: pointer;
+      transition: transform 0.12s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+      min-height: 48px;
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+      border-color: rgba(48, 219, 205, 0.4);
+      box-shadow: 0 0 16px rgba(48, 219, 205, 0.2);
+    }
+
+    .btn:active {
+      transform: translateY(0px) scale(0.98);
+    }
+
+    .btn.op {
+      background: rgba(48, 219, 205, 0.14);
+      border-color: rgba(48, 219, 205, 0.25);
+    }
+
+    .btn.warn {
+      background: rgba(255, 107, 107, 0.16);
+      border-color: rgba(255, 107, 107, 0.4);
+    }
+
+    .btn.equal {
+      background: linear-gradient(120deg, rgba(48, 219, 205, 0.7), rgba(255, 179, 71, 0.7));
+      color: #0b0f1a;
+      border: none;
+      box-shadow: 0 10px 30px rgba(255, 179, 71, 0.25);
+    }
+
+    .btn.disabled {
+      opacity: 0.35;
+      pointer-events: none;
+    }
+
+    .footer {
+      padding: 0 24px 24px;
+      color: var(--muted);
+      font-size: 0.85rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      justify-content: space-between;
+    }
+
+    .hint {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .hint span {
+      background: rgba(255, 255, 255, 0.08);
+      padding: 2px 8px;
+      border-radius: 8px;
+      font-family: "IBM Plex Mono", monospace;
+    }
+
+    .stack {
+      display: grid;
+      gap: 10px;
+      padding: 20px 24px 24px;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .stack h2 {
+      margin: 0;
+      font-size: 1rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--muted);
+    }
+
+    .stack-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-family: "IBM Plex Mono", ui-monospace, monospace;
+      font-size: 0.9rem;
+      padding: 8px 12px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .stack-item span {
+      color: var(--muted);
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+    }
+  </style>
+</head>
+<body>
+  <div class="orb one"></div>
+  <div class="orb two"></div>
+
+  <div class="app">
+    <section class="panel">
+      <div class="display">
+        <div class="title">
+          <h1>Programmer Calculator</h1>
+          <div class="status">
+            <div class="chip" id="status-base">DEC</div>
+            <div class="chip" id="status-width">32-bit</div>
+            <div class="chip" id="status-signed">SIGNED</div>
+          </div>
+        </div>
+        <div class="readout">
+          <div class="expr" id="expr">Ready</div>
+          <div class="main-value" id="main-value">0</div>
+          <div class="base-grid" id="base-grid">
+            <div class="base-row"><span>BIN</span><div id="bin-value">0</div><button class="copy-btn" data-copy="bin">Copy</button></div>
+            <div class="base-row"><span>OCT</span><div id="oct-value">0</div><button class="copy-btn" data-copy="oct">Copy</button></div>
+            <div class="base-row"><span>DEC</span><div id="dec-value">0</div><button class="copy-btn" data-copy="dec">Copy</button></div>
+            <div class="base-row"><span>HEX</span><div id="hex-value">0</div><button class="copy-btn" data-copy="hex">Copy</button></div>
+          </div>
+        </div>
+      </div>
+      <div class="controls">
+        <div class="switches">
+          <div class="toggle">
+            <div>Base</div>
+            <div class="toggle-row" id="base-toggle">
+              <button class="pill" data-base="2">BIN</button>
+              <button class="pill" data-base="8">OCT</button>
+              <button class="pill active" data-base="10">DEC</button>
+              <button class="pill" data-base="16">HEX</button>
+            </div>
+          </div>
+          <div class="toggle">
+            <div>Bit Width</div>
+            <div class="toggle-row" id="width-toggle">
+              <button class="pill" data-width="8">8</button>
+              <button class="pill" data-width="16">16</button>
+              <button class="pill active" data-width="32">32</button>
+              <button class="pill" data-width="64">64</button>
+            </div>
+          </div>
+          <div class="toggle">
+            <div>Signed</div>
+            <div class="toggle-row" id="signed-toggle">
+              <button class="pill active" data-signed="true">Signed</button>
+              <button class="pill" data-signed="false">Unsigned</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="stack">
+        <h2>Accumulator</h2>
+        <div class="stack-item"><span>Left</span><div id="acc-value">0</div></div>
+        <div class="stack-item"><span>Op</span><div id="acc-op">—</div></div>
+      </div>
+      <div class="footer">
+        <div class="hint">Keyboard: <span>0-9</span> <span>A-F</span> <span>⌫</span> <span>Enter</span></div>
+        <div class="hint">Modes: <span>AND</span> <span>OR</span> <span>XOR</span> <span>SHIFT</span></div>
+      </div>
+    </section>
+
+    <section class="panel keypad">
+      <div class="grid" id="keypad"></div>
+    </section>
+  </div>
+
+  <script>
+    const state = {
+      base: 10,
+      bitWidth: 32,
+      signed: true,
+      input: "0",
+      accumulator: 0n,
+      operator: null,
+      lastAction: null
+    };
+
+    const exprEl = document.getElementById("expr");
+    const mainValueEl = document.getElementById("main-value");
+    const binEl = document.getElementById("bin-value");
+    const octEl = document.getElementById("oct-value");
+    const decEl = document.getElementById("dec-value");
+    const hexEl = document.getElementById("hex-value");
+    const accValueEl = document.getElementById("acc-value");
+    const accOpEl = document.getElementById("acc-op");
+    const statusBaseEl = document.getElementById("status-base");
+    const statusWidthEl = document.getElementById("status-width");
+    const statusSignedEl = document.getElementById("status-signed");
+    const keypadEl = document.getElementById("keypad");
+
+    const DIGITS = "0123456789ABCDEF";
+
+    const keypadLayout = [
+      { label: "AC", type: "action", action: "allClear", style: "warn" },
+      { label: "C", type: "action", action: "clear", style: "warn" },
+      { label: "⌫", type: "action", action: "backspace" },
+      { label: "NOT", type: "unary", op: "NOT", style: "op" },
+      { label: "AND", type: "binary", op: "AND", style: "op" },
+      { label: "OR", type: "binary", op: "OR", style: "op" },
+
+      { label: "7", type: "digit" },
+      { label: "8", type: "digit" },
+      { label: "9", type: "digit" },
+      { label: "XOR", type: "binary", op: "XOR", style: "op" },
+      { label: "<<", type: "binary", op: "SHL", style: "op" },
+      { label: ">>", type: "binary", op: "SHR", style: "op" },
+
+      { label: "4", type: "digit" },
+      { label: "5", type: "digit" },
+      { label: "6", type: "digit" },
+      { label: ">>>", type: "binary", op: "USHR", style: "op" },
+      { label: "%", type: "binary", op: "MOD", style: "op" },
+      { label: "/", type: "binary", op: "DIV", style: "op" },
+
+      { label: "1", type: "digit" },
+      { label: "2", type: "digit" },
+      { label: "3", type: "digit" },
+      { label: "*", type: "binary", op: "MUL", style: "op" },
+      { label: "-", type: "binary", op: "SUB", style: "op" },
+      { label: "+", type: "binary", op: "ADD", style: "op" },
+
+      { label: "0", type: "digit" },
+      { label: "A", type: "digit" },
+      { label: "B", type: "digit" },
+      { label: "C", type: "digit" },
+      { label: "D", type: "digit" },
+      { label: "E", type: "digit" },
+
+      { label: "F", type: "digit" },
+      { label: "±", type: "action", action: "toggleSign" },
+      { label: "=", type: "action", action: "equals", style: "equal" },
+      { label: "", type: "spacer" },
+      { label: "", type: "spacer" },
+      { label: "", type: "spacer" }
+    ];
+
+    function toBigInt(value, base) {
+      if (value === "" || value === "-") return 0n;
+      let text = value.toUpperCase();
+      let sign = 1n;
+      if (text.startsWith("-")) {
+        sign = -1n;
+        text = text.slice(1);
+      }
+      const radix = BigInt(base);
+      let total = 0n;
+      for (const char of text) {
+        const digit = DIGITS.indexOf(char);
+        if (digit < 0 || digit >= base) break;
+        total = total * radix + BigInt(digit);
+      }
+      return total * sign;
+    }
+
+    function maskForWidth() {
+      return (1n << BigInt(state.bitWidth)) - 1n;
+    }
+
+    function normalize(val) {
+      let out = val;
+      const mask = maskForWidth();
+      out &= mask;
+      if (state.signed) {
+        const signBit = 1n << BigInt(state.bitWidth - 1);
+        if ((out & signBit) !== 0n) {
+          out = out - (1n << BigInt(state.bitWidth));
+        }
+      }
+      return out;
+    }
+
+    function toUnsigned(val) {
+      return val & maskForWidth();
+    }
+
+    function formatBase(val, base) {
+      const unsigned = toUnsigned(val);
+      if (base === 10) return val.toString(10);
+      return unsigned.toString(base).toUpperCase();
+    }
+
+    function updateDisplay() {
+      const current = normalize(toBigInt(state.input, state.base));
+      const bin = formatBase(current, 2);
+      const oct = formatBase(current, 8);
+      const dec = formatBase(current, 10);
+      const hex = formatBase(current, 16);
+
+      mainValueEl.textContent = state.input === "" ? "0" : state.input.toUpperCase();
+      binEl.textContent = bin;
+      octEl.textContent = oct;
+      decEl.textContent = dec;
+      hexEl.textContent = hex;
+      accValueEl.textContent = formatBase(state.accumulator, 10);
+      accOpEl.textContent = state.operator ? state.operator : "—";
+
+      statusBaseEl.textContent = baseLabel(state.base);
+      statusWidthEl.textContent = `${state.bitWidth}-bit`;
+      statusSignedEl.textContent = state.signed ? "SIGNED" : "UNSIGNED";
+      exprEl.textContent = buildExpression();
+
+      updateDigitButtons();
+    }
+
+    function buildExpression() {
+      const left = state.operator ? formatBase(state.accumulator, 10) : "";
+      const op = state.operator ? state.operator : "";
+      const right = state.input ? state.input.toUpperCase() : "";
+      if (!state.operator) return "Ready";
+      return `${left} ${op} ${right}`;
+    }
+
+    function baseLabel(base) {
+      if (base === 2) return "BIN";
+      if (base === 8) return "OCT";
+      if (base === 16) return "HEX";
+      return "DEC";
+    }
+
+    function updateDigitButtons() {
+      const allowed = DIGITS.slice(0, state.base);
+      document.querySelectorAll(".btn[data-digit]").forEach((btn) => {
+        const digit = btn.dataset.digit;
+        if (allowed.includes(digit)) {
+          btn.classList.remove("disabled");
+        } else {
+          btn.classList.add("disabled");
+        }
+      });
+    }
+
+    function applyBinary(op) {
+      const right = normalize(toBigInt(state.input, state.base));
+      let result = state.accumulator;
+
+      switch (op) {
+        case "ADD": result = state.accumulator + right; break;
+        case "SUB": result = state.accumulator - right; break;
+        case "MUL": result = state.accumulator * right; break;
+        case "DIV": result = right === 0n ? 0n : state.accumulator / right; break;
+        case "MOD": result = right === 0n ? 0n : state.accumulator % right; break;
+        case "AND": result = state.accumulator & right; break;
+        case "OR": result = state.accumulator | right; break;
+        case "XOR": result = state.accumulator ^ right; break;
+        case "SHL": {
+          const shift = clampShift(right);
+          result = state.accumulator << BigInt(shift);
+          break;
+        }
+        case "SHR": {
+          const shift = clampShift(right);
+          result = state.accumulator >> BigInt(shift);
+          break;
+        }
+        case "USHR": {
+          const unsigned = toUnsigned(state.accumulator);
+          const shift = clampShift(right);
+          result = unsigned >> BigInt(shift);
+          break;
+        }
+        default: break;
+      }
+
+      result = normalize(result);
+      state.accumulator = result;
+      state.input = formatBase(result, state.base);
+      state.operator = null;
+      state.lastAction = "equals";
+    }
+
+    function clampShift(value) {
+      const raw = Number(value);
+      if (!Number.isFinite(raw) || raw < 0) return 0;
+      return Math.min(raw, state.bitWidth);
+    }
+
+    function applyUnary(op) {
+      let current = normalize(toBigInt(state.input, state.base));
+      if (op === "NOT") {
+        current = normalize(~current);
+      }
+      state.input = formatBase(current, state.base);
+      state.lastAction = "unary";
+    }
+
+    function pushOperator(op) {
+      const current = normalize(toBigInt(state.input, state.base));
+      if (state.operator && state.lastAction !== "binary") {
+        applyBinary(state.operator);
+      }
+      state.accumulator = current;
+      state.operator = op;
+      state.input = "0";
+      state.lastAction = "binary";
+    }
+
+    function allClear() {
+      state.input = "0";
+      state.accumulator = 0n;
+      state.operator = null;
+      state.lastAction = null;
+    }
+
+    function clearEntry() {
+      state.input = "0";
+      state.lastAction = null;
+    }
+
+    function backspace() {
+      if (state.input.length <= 1) {
+        state.input = "0";
+        return;
+      }
+      state.input = state.input.slice(0, -1);
+    }
+
+    function toggleSign() {
+      if (!state.signed) return;
+      if (state.input.startsWith("-")) {
+        state.input = state.input.slice(1);
+      } else {
+        state.input = "-" + state.input;
+      }
+    }
+
+    function appendDigit(digit) {
+      const allowed = DIGITS.slice(0, state.base);
+      if (!allowed.includes(digit)) return;
+      if (state.input === "0") {
+        state.input = digit;
+        return;
+      }
+      if (state.input === "-0") {
+        state.input = "-" + digit;
+        return;
+      }
+      if (state.input === "-") {
+        state.input = "-" + digit;
+        return;
+      }
+      state.input += digit;
+    }
+
+    function setBase(newBase) {
+      const current = normalize(toBigInt(state.input, state.base));
+      state.base = newBase;
+      state.input = formatBase(current, newBase);
+    }
+
+    function setBitWidth(width) {
+      const current = normalize(toBigInt(state.input, state.base));
+      state.bitWidth = width;
+      state.accumulator = normalize(state.accumulator);
+      state.input = formatBase(current, state.base);
+    }
+
+    function setSigned(signed) {
+      const current = normalize(toBigInt(state.input, state.base));
+      state.signed = signed;
+      state.accumulator = normalize(state.accumulator);
+      state.input = formatBase(current, state.base);
+    }
+
+    function buildKeypad() {
+      keypadLayout.forEach((item) => {
+        if (item.type === "spacer") {
+          const spacer = document.createElement("div");
+          keypadEl.appendChild(spacer);
+          return;
+        }
+        const button = document.createElement("button");
+        button.className = `btn ${item.style || ""}`;
+        button.textContent = item.label;
+        if (item.type === "digit") {
+          button.dataset.digit = item.label;
+          button.addEventListener("click", () => {
+            appendDigit(item.label);
+            updateDisplay();
+          });
+        }
+        if (item.type === "binary") {
+          button.addEventListener("click", () => {
+            pushOperator(item.op);
+            updateDisplay();
+          });
+        }
+        if (item.type === "unary") {
+          button.addEventListener("click", () => {
+            applyUnary(item.op);
+            updateDisplay();
+          });
+        }
+        if (item.type === "action") {
+          button.addEventListener("click", () => {
+            if (item.action === "allClear") allClear();
+            if (item.action === "clear") clearEntry();
+            if (item.action === "backspace") backspace();
+            if (item.action === "toggleSign") toggleSign();
+            if (item.action === "equals") {
+              if (state.operator) applyBinary(state.operator);
+            }
+            updateDisplay();
+          });
+        }
+        keypadEl.appendChild(button);
+      });
+    }
+
+    function toggleGroup(containerId, attr, handler) {
+      const container = document.getElementById(containerId);
+      container.querySelectorAll(".pill").forEach((pill) => {
+        pill.addEventListener("click", () => {
+          container.querySelectorAll(".pill").forEach((p) => p.classList.remove("active"));
+          pill.classList.add("active");
+          handler(pill.dataset[attr]);
+          updateDisplay();
+        });
+      });
+    }
+
+    function bindCopyButtons() {
+      document.querySelectorAll(".copy-btn").forEach((btn) => {
+        btn.addEventListener("click", async () => {
+          const key = btn.dataset.copy;
+          let value = "";
+          if (key === "bin") value = binEl.textContent;
+          if (key === "oct") value = octEl.textContent;
+          if (key === "dec") value = decEl.textContent;
+          if (key === "hex") value = hexEl.textContent;
+          try {
+            await navigator.clipboard.writeText(value || "0");
+            btn.textContent = "Copied";
+            setTimeout(() => (btn.textContent = "Copy"), 900);
+          } catch {
+            btn.textContent = "Manual";
+            setTimeout(() => (btn.textContent = "Copy"), 900);
+          }
+        });
+      });
+    }
+
+    function handleKeydown(event) {
+      const key = event.key.toUpperCase();
+      const allowed = DIGITS.slice(0, state.base);
+      if (allowed.includes(key)) {
+        appendDigit(key);
+        updateDisplay();
+        return;
+      }
+      if (key === "BACKSPACE") {
+        backspace();
+        updateDisplay();
+      }
+      if (key === "ENTER") {
+        if (state.operator) applyBinary(state.operator);
+        updateDisplay();
+      }
+    }
+
+    buildKeypad();
+    toggleGroup("base-toggle", "base", (value) => setBase(Number(value)));
+    toggleGroup("width-toggle", "width", (value) => setBitWidth(Number(value)));
+    toggleGroup("signed-toggle", "signed", (value) => setSigned(value === "true"));
+    bindCopyButtons();
+    updateDisplay();
+    window.addEventListener("keydown", handleKeydown);
+  </script>
+</body>
+</html>
