@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WildRoots Outdoors | Answer the Call</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* CSS Variables for easy color management */
+        :root {
+            --primary-color: #2d4a22; /* Forest Green */
+            --accent-color: #8b5a2b;  /* Earth Brown */
+            --text-dark: #333;
+            --text-light: #f4f4f4;
+            --bg-light: #fafafa;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            line-height: 1.6;
+            color: var(--text-dark);
+            background-color: var(--bg-light);
+        }
+
+        /* Navigation */
+        nav {
+            background: rgba(45, 74, 34, 0.95);
+            color: white;
+            padding: 1rem 5%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        nav .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+
+        nav ul {
+            display: flex;
+            list-style: none;
+        }
+
+        nav ul li a {
+            color: white;
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            transition: color 0.3s;
+        }
+
+        nav ul li a:hover {
+            color: var(--accent-color);
+        }
+
+        /* Hero Section */
+        .hero {
+            background: linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), 
+                        url('https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1920&q=80');
+            background-size: cover;
+            background-position: center;
+            height: 80vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            color: white;
+            padding: 0 20px;
+        }
+
+        .hero h1 {
+            font-size: 3.5rem;
+            margin-bottom: 1rem;
+            text-transform: uppercase;
+        }
+
+        .hero p {
+            font-size: 1.2rem;
+            max-width: 700px;
+            margin-bottom: 2rem;
+        }
+
+        .btn {
+            background: var(--accent-color);
+            color: white;
+            padding: 12px 30px;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+            transition: transform 0.2s;
+        }
+
+        .btn:hover {
+            transform: scale(1.05);
+        }
+
+        /* Content Sections */
+        section {
+            padding: 4rem 10%;
+        }
+
+        .section-title {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+        }
+
+        .card {
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        /* User Stories */
+        .stories {
+            background: #e9ecef;
+        }
+
+        .story-card {
+            font-style: italic;
+            border-left: 5px solid var(--primary-color);
+            padding: 1.5rem;
+            background: white;
+            margin-bottom: 1rem;
+        }
+
+        .author {
+            display: block;
+            margin-top: 10px;
+            font-weight: bold;
+            font-style: normal;
+            color: var(--primary-color);
+        }
+
+        /* Contact Section */
+        .contact-container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        form input, form textarea {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 1rem;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        /* Mobile Optimization */
+        @media (max-width: 768px) {
+            nav ul {
+                display: none; /* In a real app, you'd add a hamburger menu */
+            }
+            .hero h1 {
+                font-size: 2.2rem;
+            }
+            section {
+                padding: 3rem 5%;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Navigation -->
+    <nav>
+        <div class="logo"><i class="fas fa-mountain"></i> WILDROOTS</div>
+        <ul>
+            <li><a href="#about">About Us</a></li>
+            <li><a href="#products">Products</a></li>
+            <li><a href="#services">Services</a></li>
+            <li><a href="#contact">Contact Us</a></li>
+        </ul>
+    </nav>
+
+    <!-- Hero Section -->
+    <header class="hero">
+        <h1>Nature is Calling. Answer it.</h1>
+        <p>From rugged mountain peaks to serene forest trails, WildRoots provides the premium gear and expert guidance you need to disappear into the wild and find yourself again.</p>
+        <a href="#products" class="btn">Explore Gear</a>
+    </header>
+
+    <!-- About Section -->
+    <section id="about">
+        <h2 class="section-title">About Us</h2>
+        <p style="text-align: center; max-width: 800px; margin: 0 auto;">Founded in the heart of the Cascades, WildRoots Outdoors was born from a simple belief: that everyone belongs in the wild. We are a team of hikers, climbers, and dreamers dedicated to making the outdoors accessible, safe, and sustainable for everyone.</p>
+    </section>
+
+    <!-- Products Section -->
+    <section id="products" style="background: white;">
+        <h2 class="section-title">Our Products</h2>
+        <div class="grid">
+            <div class="card">
+                <i class="fas fa-campground fa-3x" style="color: var(--primary-color); margin-bottom: 1rem;"></i>
+                <h3>Basecamp Tents</h3>
+                <p>Ultra-light, 4-season protection for the harshest conditions.</p>
+            </div>
+            <div class="card">
+                <i class="fas fa-hiking fa-3x" style="color: var(--primary-color); margin-bottom: 1rem;"></i>
+                <h3>Trail Packs</h3>
+                <p>Ergonomic designs to carry your world on your back comfortably.</p>
+            </div>
+            <div class="card">
+                <i class="fas fa-shoe-prints fa-3x" style="color: var(--primary-color); margin-bottom: 1rem;"></i>
+                <h3>Terrain Boots</h3>
+                <p>Waterproof grip that never lets go, no matter the trail.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Services Section -->
+    <section id="services">
+        <h2 class="section-title">Adventure Services</h2>
+        <div class="grid">
+            <div class="card">
+                <h3>Guided Expeditions</h3>
+                <p>Join our experts on 3-day and 7-day backcountry journeys.</p>
+            </div>
+            <div class="card">
+                <h3>Gear Maintenance</h3>
+                <p>We repair and proof your gear so it lasts a lifetime.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- User Stories -->
+    <section class="stories">
+        <h2 class="section-title">Explorer Stories</h2>
+        <div class="grid">
+            <div class="story-card">
+                "I took the WildRoots Apex Tent to the summit of Mount Whitney. Through 40mph winds, I felt completely secure. This gear is built for the real world."
+                <span class="author">— Sarah M., Professional Climber</span>
+            </div>
+            <div class="story-card">
+                "The guided weekend trip changed how I view nature. I went from a city-dweller to a confident hiker in just three days. Best investment I've made."
+                <span class="author">— Jake T., Weekend Warrior</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact Section -->
+    <section id="contact">
+        <h2 class="section-title">Contact Us</h2>
+        <div class="contact-container">
+            <form>
+                <input type="text" placeholder="Your Name" required>
+                <input type="email" placeholder="Your Email" required>
+                <textarea rows="5" placeholder="Tell us about your next adventure..." required></textarea>
+                <button type="submit" class="btn" style="border: none; width: 100%; cursor: pointer;">Send Message</button>
+            </form>
+        </div>
+    </section>
+
+    <footer style="background: #333; color: white; text-align: center; padding: 2rem;">
+        <p>&copy; 2024 WildRoots Outdoors. All rights reserved.</p>
+    </footer>
+
+</body>
+</html>
