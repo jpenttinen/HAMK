@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}News Aggregator{% endblock %}</title>
+    <style>
+        :root {
+            --bg: #f7f8fa;
+            --surface: #ffffff;
+            --text: #1b1f24;
+            --muted: #5b6777;
+            --line: #d7dde5;
+            --accent: #0f62fe;
+            --danger: #b42318;
+            --ok: #0b8f49;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(180deg, #f4f7fb 0%, #eef2f7 100%);
+            color: var(--text);
+        }
+
+        .container {
+            width: min(1100px, 92vw);
+            margin: 0 auto;
+            padding: 1.5rem 0 2rem;
+        }
+
+        header {
+            background: var(--surface);
+            border-bottom: 1px solid var(--line);
+            margin-bottom: 1rem;
+        }
+
+        .header-inner {
+            width: min(1100px, 92vw);
+            margin: 0 auto;
+            padding: 1rem 0;
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        nav a {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 600;
+            margin-right: 1rem;
+        }
+
+        nav a:last-child { margin-right: 0; }
+        nav a:hover { text-decoration: underline; }
+
+        .message-list {
+            list-style: none;
+            padding: 0;
+            margin: 0 0 1rem;
+        }
+
+        .message-item {
+            border: 1px solid var(--line);
+            border-left-width: 4px;
+            background: var(--surface);
+            padding: 0.75rem 1rem;
+            margin-bottom: 0.6rem;
+        }
+
+        .message-item.success {
+            border-left-color: var(--ok);
+        }
+
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            padding: 1rem 1.2rem;
+            margin-bottom: 1rem;
+        }
+
+        .muted { color: var(--muted); }
+
+        .btn {
+            display: inline-block;
+            background: var(--accent);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 0.5rem 0.9rem;
+            cursor: pointer;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--line);
+            color: var(--text);
+        }
+
+        .btn-danger {
+            background: var(--danger);
+        }
+
+        input[type="text"],
+        input[type="url"],
+        input[type="number"],
+        select {
+            width: 100%;
+            border: 1px solid var(--line);
+            border-radius: 6px;
+            padding: 0.5rem 0.6rem;
+            margin-top: 0.3rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            border-bottom: 1px solid var(--line);
+            text-align: left;
+            padding: 0.65rem 0.4rem;
+            vertical-align: top;
+        }
+
+        .actions {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .article {
+            padding: 0.8rem 0;
+            border-bottom: 1px dashed var(--line);
+        }
+
+        .article:last-child {
+            border-bottom: none;
+        }
+
+        .article h3 {
+            margin: 0 0 0.35rem;
+            font-size: 1.05rem;
+        }
+
+        .article p {
+            margin: 0.45rem 0;
+            line-height: 1.4;
+        }
+    </style>
+</head>
+<body>
+<header>
+    <div class="header-inner">
+        <strong>News Aggregator</strong>
+        <nav>
+            <a href="{% url 'aggregator:dashboard' %}">Dashboard</a>
+            <a href="{% url 'aggregator:source_list' %}">Manage Sources</a>
+        </nav>
+    </div>
+</header>
+<main class="container">
+    {% if messages %}
+        <ul class="message-list">
+            {% for message in messages %}
+                <li class="message-item {{ message.tags }}">{{ message }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+    {% block content %}{% endblock %}
+</main>
+</body>
+</html>

@@ -1,0 +1,50 @@
+{% extends "aggregator/base.html" %}
+
+{% block title %}Dashboard | News Aggregator{% endblock %}
+
+{% block content %}
+<section class="card">
+    <h1 style="margin-top: 0;">Latest News</h1>
+    <p class="muted" style="margin-bottom: 0;">
+        Active sources: <strong>{{ active_sources_count }}</strong> /
+        Total sources: <strong>{{ total_sources_count }}</strong>
+    </p>
+</section>
+
+{% if source_feeds %}
+    {% for feed in source_feeds %}
+        <section class="card">
+            <h2 style="margin-top: 0;">
+                {{ feed.source.name }}
+                <span class="muted" style="font-size: 0.9rem;">(max {{ feed.source.max_items }} items)</span>
+            </h2>
+
+            {% if feed.error %}
+                <p style="color: #b42318;"><strong>Error:</strong> {{ feed.error }}</p>
+            {% elif feed.items %}
+                {% for item in feed.items %}
+                    <article class="article">
+                        <h3>
+                            <a href="{{ item.link }}" target="_blank" rel="noopener noreferrer">{{ item.title }}</a>
+                        </h3>
+                        <p class="muted" style="font-size: 0.88rem;">{{ item.published }}</p>
+                        {% if item.summary %}
+                            <p>{{ item.summary }}</p>
+                        {% endif %}
+                    </article>
+                {% endfor %}
+            {% else %}
+                <p class="muted">No items were returned by this source.</p>
+            {% endif %}
+        </section>
+    {% endfor %}
+{% else %}
+    <section class="card">
+        <h2 style="margin-top: 0;">No active sources</h2>
+        <p class="muted">
+            Add a source and enable it to start aggregating news.
+        </p>
+        <a class="btn" href="{% url 'aggregator:source_list' %}">Configure Sources</a>
+    </section>
+{% endif %}
+{% endblock %}

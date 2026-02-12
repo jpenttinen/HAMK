@@ -1,0 +1,30 @@
+{% extends "aggregator/base.html" %}
+
+{% block title %}Edit Source | News Aggregator{% endblock %}
+
+{% block content %}
+<section class="card">
+    <h1 style="margin-top: 0;">Edit Source: {{ source.name }}</h1>
+    <form method="post">
+        {% csrf_token %}
+        <div style="display: grid; gap: 0.9rem; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));">
+            {% for field in form %}
+                <label>
+                    <span>{{ field.label }}</span>
+                    {{ field }}
+                    {% if field.help_text %}
+                        <small class="muted">{{ field.help_text }}</small>
+                    {% endif %}
+                    {% for error in field.errors %}
+                        <small style="color: #b42318; display: block;">{{ error }}</small>
+                    {% endfor %}
+                </label>
+            {% endfor %}
+        </div>
+        <div style="margin-top: 1rem; display: flex; gap: 0.7rem; flex-wrap: wrap;">
+            <button class="btn" type="submit">Save Changes</button>
+            <a class="btn btn-outline" href="{% url 'aggregator:source_list' %}">Back</a>
+        </div>
+    </form>
+</section>
+{% endblock %}

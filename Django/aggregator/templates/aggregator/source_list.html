@@ -1,0 +1,73 @@
+{% extends "aggregator/base.html" %}
+
+{% block title %}Sources | News Aggregator{% endblock %}
+
+{% block content %}
+<section class="card">
+    <h1 style="margin-top: 0;">Add News Source</h1>
+    <form method="post">
+        {% csrf_token %}
+        <div style="display: grid; gap: 0.9rem; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));">
+            {% for field in form %}
+                <label>
+                    <span>{{ field.label }}</span>
+                    {{ field }}
+                    {% if field.help_text %}
+                        <small class="muted">{{ field.help_text }}</small>
+                    {% endif %}
+                    {% for error in field.errors %}
+                        <small style="color: #b42318; display: block;">{{ error }}</small>
+                    {% endfor %}
+                </label>
+            {% endfor %}
+        </div>
+        <div style="margin-top: 1rem;">
+            <button class="btn" type="submit">Add Source</button>
+        </div>
+    </form>
+</section>
+
+<section class="card">
+    <h2 style="margin-top: 0;">Configured Sources</h2>
+    {% if sources %}
+        <table>
+            <thead>
+            <tr>
+                <th>Name</th>
+                <th>Feed URL</th>
+                <th>Max Items</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for source in sources %}
+                <tr>
+                    <td>{{ source.name }}</td>
+                    <td><a href="{{ source.feed_url }}" target="_blank" rel="noopener noreferrer">{{ source.feed_url }}</a></td>
+                    <td>{{ source.max_items }}</td>
+                    <td>
+                        {% if source.is_active %}
+                            <span style="color: #0b8f49;">Active</span>
+                        {% else %}
+                            <span class="muted">Inactive</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="actions">
+                            <a class="btn btn-outline" href="{% url 'aggregator:source_edit' source.pk %}">Edit</a>
+                            <form method="post" action="{% url 'aggregator:source_delete' source.pk %}">
+                                {% csrf_token %}
+                                <button class="btn btn-danger" type="submit">Delete</button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p class="muted">No sources configured yet.</p>
+    {% endif %}
+</section>
+{% endblock %}
